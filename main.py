@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, send_file
 from gen_3d import Simple3DObject
 
 app = Flask(__name__)
@@ -24,10 +24,16 @@ def create_obj():
         obj = Simple3DObject(x, y, z, face_color=color)
         
         # Export to obj file with unique name based on dimensions
-        filename = f"object_{x}_{y}_{z}.obj"
+        filename = f"temp/object_{x}_{y}_{z}.obj"
         obj.export_obj(filename)
         
-        return {'message': f'OBJ file created successfully as {filename}'}, 200
+        # Return the file for download
+        return send_file(
+            filename,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='model/obj'
+        )
         
     except Exception as e:
         return {'error': str(e)}, 400
