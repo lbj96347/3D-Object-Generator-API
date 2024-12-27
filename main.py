@@ -1,5 +1,6 @@
 from flask import Flask, request, send_file
 from gen_3d import Simple3DObject
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -23,8 +24,9 @@ def create_obj():
         # Create 3D object
         obj = Simple3DObject(x, y, z, face_color=color)
         
-        # Export to obj file with unique name based on dimensions
-        filename = f"temp/object_{x}_{y}_{z}.obj"
+        # Export to obj file with unique name based on timestamp and dimensions
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"temp/object_{timestamp}_{x}_{y}_{z}.obj"
         obj.export_obj(filename)
         
         # Return the file for download
