@@ -1,6 +1,7 @@
 from flask import Flask, request, send_file
 from gen_3d import Simple3DObject
 from datetime import datetime
+import zipfile
 
 app = Flask(__name__)
 
@@ -26,15 +27,26 @@ def create_obj():
         
         # Export to obj file with unique name based on timestamp and dimensions
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"temp/object_{timestamp}_{x}_{y}_{z}.obj"
-        obj.export_obj(filename)
+        base_filename = f"object_{timestamp}_{x}_{y}_{z}"
+        obj_filename = f"temp/{base_filename}.obj"
+        obj.export_obj(obj_filename)
         
-        # Return the file for download
+        # Get the MTL filename that was created
+        mtl_filename = obj_filename.rsplit('.', 1)[0] + '.mtl'
+        
+        # Create zip file containing both OBJ and MTL
+        zip_filename = f"temp/{base_filename}.zip"
+
+        with zipfile.ZipFile(zip_filename, 'w') as zf:
+            zf.write(obj_filename, arcname=f"{base_filename}.obj")
+            zf.write(mtl_filename, arcname=f"{base_filename}.mtl")
+            
+        # Return the zip file for download
         return send_file(
-            filename,
+            zip_filename,
             as_attachment=True,
-            download_name=filename,
-            mimetype='model/obj'
+            download_name=f"{base_filename}.zip",
+            mimetype='application/zip'
         )
         
     except Exception as e:
