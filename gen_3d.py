@@ -1,3 +1,5 @@
+import os
+
 class Simple3DObject:
     def __init__(self, x, y, z, face_color=(0.0, 1.0, 0.0)):
         """
@@ -33,6 +35,7 @@ class Simple3DObject:
         
     def generate_faces(self):
         """Generate 12 triangular faces (6 squares split into triangles)"""
+        # Note: OBJ format uses 1-based indexing for vertices
         self.faces = [
             # Front face
             [1, 2, 3], [1, 3, 4],
@@ -66,9 +69,11 @@ class Simple3DObject:
             f.write("# Material definition\n")
             f.write("newmtl material0\n")
             f.write(f"Kd {self.face_color[0]} {self.face_color[1]} {self.face_color[2]}\n")
-            f.write("Ka 0 0 0\n")  # Ambient color
-            f.write("Ks 0 0 0\n")  # Specular color
-            f.write("d 1.0\n")     # Opacity
+            f.write("Ka 0.2 0.2 0.2\n")  # Ambient color
+            f.write("Ks 0.5 0.5 0.5\n")  # Specular color
+            f.write("Ns 96.078431\n")    # Specular exponent
+            f.write("d 1.0\n")           # Opacity
+            f.write("illum 2\n")         # Illumination model (2 = highlight on)
             
         # Write OBJ file
         with open(filename, 'w') as f:
@@ -77,15 +82,35 @@ class Simple3DObject:
             f.write(f"# Dimensions: {self.x}cm x {self.y}cm x {self.z}cm\n\n")
             
             # Reference material file
-            f.write(f"mtllib {mtl_filename.split('/')[-1]}\n\n")
+            f.write(f"mtllib {os.path.basename(mtl_filename)}\n\n")
             
             # Write vertices
+            f.write("# Vertices\n")
             for v in self.vertices:
                 f.write(f"v {v[0]} {v[1]} {v[2]}\n")
             
+            # Write texture coordinates (even though we don't use textures)
+            f.write("\n# Texture coordinates\n")
+            f.write("vt 0.0 0.0\n")
+            f.write("vt 1.0 0.0\n")
+            f.write("vt 1.0 1.0\n")
+            f.write("vt 0.0 1.0\n")
+            
+            # Write vertex normals
+            f.write("\n# Vertex normals\n")
+            f.write("vn 0.0 0.0 1.0\n")  # Front
+            f.write("vn 0.0 0.0 -1.0\n") # Back
+            f.write("vn 1.0 0.0 0.0\n")  # Right
+            f.write("vn -1.0 0.0 0.0\n") # Left
+            f.write("vn 0.0 1.0 0.0\n")  # Top
+            f.write("vn 0.0 -1.0 0.0\n") # Bottom
+            
             # Specify material before faces
             f.write("\nusemtl material0\n")
+            f.write("s 1\n")  # Enable smooth shading
             
-            # Write faces
-            for face in self.faces:
-                f.write(f"f {face[0]} {face[1]} {face[2]}\n")
+            # Write faces with vertex/texture/normal indices
+            for i, face in enumerate(self.faces):
+                normal_idx = (i // 2) + 1  # Each pair of triangles shares a normal
+                # Include texture coordinates in face definition
+                f.write(f"f {face[0]}/1/{normal_idx} {face[1]}/2/{normal_idx} {face[2]}/3/{normal_idx}\n")
